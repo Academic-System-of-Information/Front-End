@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
 
       - name: npm install, build, and test
         run: |
@@ -29,7 +29,7 @@ jobs:
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
-      
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
@@ -42,8 +42,6 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
 
     steps:
       - name: Download artifact from build job
@@ -51,21 +49,14 @@ jobs:
         with:
           name: node-app
 
-      - name: unzip artifact for deployment
+      - name: Unzip artifact for deployment
         run: unzip release.zip
-      
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_392E01A8558A49F49AA48B66D083EE7F }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9FF63AF6B4DE458D89D29B73BB319B1F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8105AD331BD04D5B93EBD770FC0E2F2F }}
 
       - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
         with:
           app-name: 'sia-web-demo'
           slot-name: 'Production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_72DF5FB49D3D419AA9CD61C048CEEA01 }}
           package: .
-          
